@@ -49,7 +49,7 @@ void motor_control(void)
 
 void follow_simple_curves(void)
 {
-    if ( SeeLine.b.Center ) straight_fwd();
+    if ( SeeLine.b.Center ) straight_fwd(); //Just keep swimming
     else if (SeeLine.b.Left) spin_left();
     else if (SeeLine.b.CntLeft) turn_left();
     else if (SeeLine.b.CntRight) turn_right();
