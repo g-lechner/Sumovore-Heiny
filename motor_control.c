@@ -23,6 +23,11 @@ void check_For_Lines(void);
 
 void testFunction(void);
 void delay_x_seconds(int time); //time = 80 per second
+
+signed char motor_speed_variable[] = {0,0,0,0}; //set 0 for stopped, 1 for slow, 2 for med, 3 for fast, -1 for rev slow, etc. this is left motor first, then right  
+//also, last two elements are for int modifier, to make this array more unique.
+//the purpose of this is so that our motors are not being set to a speed constantly, allowing it to run faster.
+
 void motor_control(void)
 {
      // very simple motor control
@@ -37,7 +42,7 @@ void motor_control(void)
                        follow_complex_curves();
                        break;
         case 0b00000u:
-                       check_For_Lines();
+                       motors_brake_all();
                        break;
         default:       break;
       } 
@@ -49,59 +54,117 @@ void follow_complex_curves(void)
   {
     case 0b00100u:
     {
-      straight_fwd(); //Just keep swimming   
+      if (!motor_speed_variable[3,3,0,0])
+      {
+        straight_fwd(); //Just keep swimming   
+      }
+      break;
     }
     case 0b10000u: 
     {
-      spin_left();
+       if (!motor_speed_variable[-3,3,0,0])
+       {
+         spin_left();
+       }
+       break;
     }
     case 0b01000u:
     {
-      turn_left();
+       if (!motor_speed_variable[0,3,0,0])
+       {
+         turn_left();
+       }
+       break;
     }
     case 0b00010u:
     {
-      turn_right();
+       if (!motor_speed_variable[3,0,0,0])
+       {
+         turn_right();
+       }
+       break;
     }
     case 0b00001u:
     {
-      spin_right();
+      if (!motor_speed_variable[3,-3,0,0])
+      {
+        spin_right();
+      }
+      break;
     }
+    /*
+    case 0b00111u: //for sharp right turns, will turn right for some amount, then reorient itself
+    {
+       turn_right(); 
+       delay_x_seconds(10);
+       break;
+    }
+    case 0b11100u:
+    {
+        turn_left();
+        delay_x_seconds(10);//see above case but for sharp lefts
+        break;
+    }
+    case 0b00101u: //for reverse turns to the right
+    {
+        turn_right();
+        delay_x_seconds(30);
+        break;
+    }
+    case 0b10100u: //for reverse turns to the left
+    {
+        turn_left();
+        delay_x_second(30);
+        break;
+    }
+    */
   }
 }
 
 void spin_left(void)
 {
-  set_motor_speed(left, rev_fast, 0); 
-  set_motor_speed(right, fast, 0); 
+    motor_speed_variable[-3,3,0,0];
+    set_motor_speed(left, rev_fast, 0); 
+    set_motor_speed(right, fast, 0); 
 }
 
 void turn_left(void)
 {
-  set_motor_speed(left, stop, 0); 
-  set_motor_speed(right, fast, 0); 
+    motor_speed_variable[0,3,0,0];
+    set_motor_speed(left, stop, 0); 
+    set_motor_speed(right, fast, 0); 
 }
 void straight_fwd(void)
 {
-  set_motor_speed(left, fast, 0); 
-  set_motor_speed(right, fast, 0); 
+    motor_speed_variable[3,3,0,0];
+    set_motor_speed(left, fast, 0); 
+    set_motor_speed(right, fast, 0); 
 }
 
+//Currently do not need
+/*
 void straight_backwards(void)
 {
-  set_motor_speed(left, rev_fast, 50); 
-  set_motor_speed(right, rev_fast, 0); 
+  if (!motor_speed_variable[-3,-3,50,0])
+  {
+    motor_speed_variable[-3,-3,50,0];
+    set_motor_speed(left, rev_fast, 50); 
+    set_motor_speed(right, rev_fast, 0);
+  }
 }
+ */
 
 void spin_right(void)
 {
-  set_motor_speed(left, fast, 0); 
-  set_motor_speed(right, rev_fast, 0); 
+    motor_speed_variable[3,-3,0,0];
+    set_motor_speed(left, fast, 0); 
+    set_motor_speed(right, rev_fast, 0);
 }
 void turn_right(void)
 {
-  set_motor_speed(left, fast, 0); 
-  set_motor_speed(right, stop, 0); 
+    motor_speed_variable[3,0,0,0];
+    set_motor_speed(left, fast, 0); 
+    set_motor_speed(right, stop, 0); 
 }
 void testFunction(void)
 {
@@ -141,17 +204,27 @@ void testFunction(void)
   delay_x_seconds(240);
 }
 
+//This function is essentially a clone of turn_right!
+/* 
 void spin_around_one_wheel_clockwise(void)
 {
-  set_motor_speed(left, fast, 0); 
-  set_motor_speed(right, stop, 0);
+  if (!motor_speed_variable[3,0,0,0])
+  {
+    motor_speed_variable[3,0,0,0]
+    set_motor_speed(left, fast, 0); 
+    set_motor_speed(right, stop, 0);
+  }
 }
+ */
 
+//Clone of turn_left
+/*
 void spin_around_one_wheel_counterclockwise(void)
 {
   set_motor_speed(left, stop, 0); 
   set_motor_speed(right, fast, 0);
 }
+ */
 
 void spin_in_one_place_clockwise (void)
 {
