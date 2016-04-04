@@ -1,3 +1,16 @@
+/*V1.1 Edited to for 3 main things:
+
+1.  Robot was moving too fast for sensors to detect. 
+    Changed straightfwd to medium speed
+    
+2.  Robot needs to make 180 degree turns when reaching a dead end
+    Edited/tested turn_around function for a long enough delay to turn 180 degrees when called
+    
+3.  Robot was veering off to the right when straight fwd was called continuously
+    modified speed modifiers to speed up right motor
+    
+*/    
+
 #include <xc.h>
 #include "sumovore.h"
 #include "motor_control.h"
@@ -21,6 +34,7 @@ void spin_in_one_place_counterclockwise (void);
 
 void check_For_Lines(void);
 
+void test_straight(void);
 void testFunction(void);
 void delay_x_seconds(int time); //time = 80 per second
 
@@ -56,6 +70,9 @@ void motor_control(void)
                        break;
         case 0b00000u:
         {
+        /*
+        If robot does not detect any sensors, let it go straight  
+         */
             switch(condition)
             {
                     case 0:
@@ -107,7 +124,7 @@ void follow_complex_curves(void)
     }
     case 0b11111u:
     {
-      if (!motor_speed_variable[3,3,0,0])
+      if (!motor_speed_variable[2,2,0,20])
       {
         straight_fwd(); //Just keep swimming   
       }
@@ -263,9 +280,9 @@ void turn_left(void)
 }
 void straight_fwd(void)
 {
-    motor_speed_variable[3,3,0,0];
-    set_motor_speed(left, fast, 0); 
-    set_motor_speed(right, fast, 0); 
+    motor_speed_variable[2,2,0,20];
+    set_motor_speed(left, medium, 0); 
+    set_motor_speed(right, medium, 20); 
 }
 
 //Currently do not need
@@ -401,8 +418,16 @@ void check_For_Lines(void)
 void turn_around(void)
 {
     spin_in_one_place_clockwise();
-    delay_x_seconds(10);  //sample time, will need to test to optimize for our bot   
+    delay_x_seconds(37);  //sample time, will need to test to optimize for our bot   
 }
+
+void test_straight(void)
+{
+    straight_fwd();
+    delay_x_seconds(80);
+}
+
+
 
 void delay_x_seconds(int time) //time = 80 for one second @ 32MHz
 {
@@ -426,6 +451,5 @@ void last_Special_Condition(char condition)
         }
   
     }
-    
     
 }
