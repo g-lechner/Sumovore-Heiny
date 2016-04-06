@@ -1,5 +1,5 @@
 /*
- * V1.2
+ * V1.3
 
  * 
 */
@@ -14,33 +14,35 @@
 void follow_complex_curves(void);
 void spin_left(void);
 void turn_left(void);
+void curve_left(void);
+
+void test150(void);
+
 void straight_fwd(void);
 void straight_backwards(void);
+
+void curve_right(void);
 void turn_right(void);
 void spin_right(void);
+void slow_fwd(void);
+
+void spin_150_counterclockwise(void);
+void spin_150_clockwise(void);
 
 void turn_around(void);
 
-void spin_circle_clockwise(void);
-void spin_circle_counterclockwise(void);
-void spin_around_one_wheel_clockwise(void);
-void spin_in_one_place_clockwise (void);
-void spin_around_one_wheel_counterclockwise(void);
-void spin_in_one_place_counterclockwise (void);
-
-void check_For_Lines(void);
+char check_For_Lines(void);
 
 void test_straight(void);
 void testFunction(void);
 void delay_x_seconds(int time); //time = 80 per second
 
-void last_Special_Condition(char condition);
+char line_seen;
 
 signed int motor_speed_variable[] = {0,0,0,0}; //set 0 for stopped, 1 for slow, 2 for med, 3 for fast, -1 for rev slow, etc. this is left motor first, then right  
 //also, last two elements are for int modifier, to make this array more unique.
 //the purpose of this is so that our motors are not being set to a speed constantly, allowing it to run faster.
 
- char condition = 0;
  
 
 void motor_control(void)
@@ -52,6 +54,8 @@ void motor_control(void)
         case 0b00100u: //Straight
         case 0b00010u: //Curve right
         case 0b01000u: // Curve left
+        case 0b01100u: //Curve left
+        case 0b00110u: //Curve Right
         case 0b00001u: //Curve sharp right
         case 0b10000u://Curve sharp left 
         case 0b00111u: // 90 degrees Turn Right
@@ -70,19 +74,24 @@ void motor_control(void)
         case 0b00000u:
         {
             TMR0IF = 0;
-            WriteTimer0(12776960); //16776960-12776960 = 4000000 TCY = .5s ~ 15cm
+            WriteTimer0(49911u); //(65536-49911)*256 = 4000000 TCY = .5s ~ 15cm
+            straight_fwd();
             while(!TMR0IF && !SeeLine.B)
             {
                 check_sensors();
                 set_leds();
-                if(SeeLine.B)
-                follow_complex_curves();                 
-            }           
-            turn_around();
-            
+                                 
+            }     
+            if (SeeLine.B)
             break;
+            
+            else if (TMR0IF)
+            {
+            turn_around();  
+            break;
+            }
         }                
-     }           
+    }          
                     
 }
 
@@ -94,7 +103,7 @@ void follow_complex_curves(void)
     {
         
         _delay(3000); //So the robot goes past the turn before actually turning
-        spin_in_one_place_clockwise(); 
+        spin_right();
         while(!SeeLine.b.Center)
         {
             check_sensors();
@@ -106,123 +115,99 @@ void follow_complex_curves(void)
     {
         
         _delay(3000); //So the robot goes past the turn before actually turning
-        spin_in_one_place_counterclockwise(); 
+        spin_left();
         while(!SeeLine.b.Center)
         {
             check_sensors();
             set_leds(); 
         }
+        
         break;  
     }
-    case 0b11111u:
-    {
-      if (!motor_speed_variable[2,2,0,20])
-      {
-        straight_fwd(); //Just keep swimming   
-      }
-      _delay(3000);
-      check_sensors();
-      set_leds();    
-      break;
-    }
+
+    //Should we make these Check for lines?
     case 0b01111u:
     {
-      spin_in_one_place_clockwise(); 
-      while(!SeeLine.b.Center)
-      {
-          check_sensors();
-          set_leds(); 
-      }
-      check_sensors();
-      set_leds();
+      spin_right(); 
       break;
     }
+    //This too?
     case 0b11110u:
     {
-      spin_in_one_place_counterclockwise(); 
-      while(!SeeLine.b.Center)
-      {
-          check_sensors();
-          set_leds(); 
-      }    
-      check_sensors();
-      set_leds();
+      spin_left();     
       break;
     }
-    /*case 0b11000u:
+    
+    case 0b11000u:
     {
       if (!motor_speed_variable[-3,3,0,0])
       {
-        spin_left(); //Just keep swimming   
+        turn_left(); //Just keep swimming   
       }
-      check_sensors();
-      set_leds();
+              while(!SeeLine.b.Center)
+        {
+            check_sensors();
+            set_leds(); 
+        }
+        
       break;
     }
     case 0b00011u:
     {
       if (!motor_speed_variable[3,-3,0,0])
       {
-        spin_right(); //Just keep swimming 
+        turn_right(); //Just keep swimming 
       }
-      check_sensors();
-      set_leds();
+              while(!SeeLine.b.Center)
+        {
+            check_sensors();
+            set_leds(); 
+        }
+        
       break;
-    }*/
+    }
+    
       case 0b00100u:
       {
-         
-          if (!motor_speed_variable[2,2,0,20])
-          {
-             straight_fwd();    
-          }
-          check_sensors();
-          set_leds();
+          straight_fwd();    
           break;
       }
     case 0b10000u: 
     {
-      
-       if (!motor_speed_variable[-3,3,0,0])
+         if(!SeeLine.b.Center)
+      {
+       if (!motor_speed_variable[-2,2,0,0])
        {
          spin_left();
        }
-       check_sensors();
-       set_leds();
        break;
+      }
     }
+    case 0b01100u:
     case 0b01000u:
     {
-      
-       if (!motor_speed_variable[0,3,0,0])
+       if (!motor_speed_variable[1,2,0,0])
        {
          turn_left();
        }
-       check_sensors();
-       set_leds();
        break;
     }
+    case 0b00110u:
     case 0b00010u:
     {
-       if (!motor_speed_variable[3,0,0,0])
+       if (!motor_speed_variable[2,1,0,0])
        {
          turn_right();
        }
-       check_sensors();
-       set_leds();
        break;
     }
     case 0b00001u:
     {
-      if(!SeeLine.b.Center && !SeeLine.b.CntLeft && !SeeLine.b.CntRight && !SeeLine.b.Left)
+      if(!SeeLine.b.Center)
       {
-        if (!motor_speed_variable[3,-3,0,0])
-        {
-          spin_right();
-        }
+        if (!motor_speed_variable[2,-2,0,0])
+          spin_right(); 
       }
-      check_sensors();
-      set_leds();
       break;
     }
     
@@ -230,40 +215,64 @@ void follow_complex_curves(void)
     case 0b00101u: //for reverse turns to the right
     {
         //_delay(6000); //So the robot goes past the turn before actually turning
-        check_For_Lines();
-        spin_in_one_place_clockwise(); 
-        while(!SeeLine.b.Center)
-        {
-            check_sensors();
-            set_leds(); 
-        }
+    TMR0IF = 0;
+    WriteTimer0(34286u); //(65536-34286)*256 = 1s
+    while(!TMR0IF)
+    {
+        motors_brake_all();
+    while(ReadTimer0() < 37411u)  //quarter second to check for lines
+    {line_seen = check_For_Lines();   } 
+        
+        if (line_seen)
+            straight_fwd();
+        else if (!line_seen)
+            spin_150_clockwise(); 
+    }
         break;  
     }
     case 0b10100u: //for reverse turns to the left
     {
         //_delay(6000); //So the robot goes past the turn before actually turning
-        check_For_Lines();
-        spin_in_one_place_counterclockwise(); 
-        while(!SeeLine.b.Center)
-        {
-            check_sensors();
-            set_leds(); 
-        }
-        break;  
+        
+
+            TMR0IF = 0;
+    WriteTimer0(34286u); //(65536-34286)*256 = 1s
+    while(!TMR0IF)
+    {
+        motors_brake_all();
+    while(ReadTimer0() < 37411u)  //quarter second to check for lines
+    {line_seen = check_For_Lines();   } 
+        
+        if (line_seen)
+            straight_fwd();
+        else if (!line_seen)
+            spin_150_counterclockwise(); 
+        
+          
+    }
+    break;
     }
     case 0b11111u:
     {
     TMR0IF = 0;
-    WriteTimer0(15976960u); //16776960-15976960 = .1s ~ 3cm 
+    WriteTimer0(57724u); //(65536-57724)*256 = .25s
+    
+    
+    
     while(!TMR0IF)
     {
-      if (!motor_speed_variable[2,2,0,20])
+      if (!motor_speed_variable[2,2,0,30])
       {
         straight_fwd();
       }
     }
-    if (SeeLine.b.Center && SeeLine.b.CntLeft && SeeLine.b.CntRight && SeeLine.b.Left && SeeLine.b.Right)
+    /*if (SeeLine.b.Center && SeeLine.b.CntLeft && SeeLine.b.CntRight && SeeLine.b.Left && SeeLine.b.Right)
+        while(1)
+        {
         motors_brake_all();
+        }
+     */
+    
       break;
     }
   }
@@ -271,24 +280,25 @@ void follow_complex_curves(void)
 
 
 
-void spin_left(void)
+void spin_left(void) //[-2,2,0,0]
 {
     motor_speed_variable[-3,3,0,0];
     set_motor_speed(left, rev_fast, 0); 
     set_motor_speed(right, fast, 0); 
 }
 
-void turn_left(void)
+void turn_left(void) //[0,3,0,0]
 {
     motor_speed_variable[0,3,0,0];
     set_motor_speed(left, stop, 0); 
     set_motor_speed(right, fast, 0); 
 }
-void straight_fwd(void)
+
+void straight_fwd(void) //[2,2,0,30]
 {
-    motor_speed_variable[2,2,0,20];
-    set_motor_speed(left, medium, 0); 
-    set_motor_speed(right, medium, 20); 
+    motor_speed_variable[2,2,0,50];
+    set_motor_speed(left, slow, 0); 
+    set_motor_speed(right, slow, 50); 
 }
 
 //Currently do not need
@@ -304,105 +314,78 @@ void straight_backwards(void)
 }
  */
 
-void spin_right(void)
+void spin_right(void) //[2,-2,0,0]
 {
     motor_speed_variable[3,-3,0,0];
     set_motor_speed(left, fast, 0); 
     set_motor_speed(right, rev_fast, 0);
 }
-void turn_right(void)
+
+void turn_right(void) //[3,0,0,0]
 {
-    motor_speed_variable[3,0,0,0];
+     motor_speed_variable[3,0,0,0];
     set_motor_speed(left, fast, 0); 
-    set_motor_speed(right, stop, 0); 
-}
-void testFunction(void)
-{
-  set_motor_speed(left, fast, 0); 
-  set_motor_speed(right, fast, 0); 
-  
-  delay_x_seconds(240);
-  
-  set_motor_speed(left, medium, 0); 
-  set_motor_speed(right, medium, 0); 
-  
-  delay_x_seconds(240);
-  
-  set_motor_speed(left, slow, 0); 
-  set_motor_speed(right, slow, 0); 
-  
-  delay_x_seconds(240);
-  
-  set_motor_speed(left, stop, 0); 
-  set_motor_speed(right, stop, 0); 
-  
-  delay_x_seconds(240);
-  
-  set_motor_speed(left, rev_slow, 0); 
-  set_motor_speed(right, rev_slow, 0); 
-  
-  delay_x_seconds(240);
-  
-  set_motor_speed(left, rev_medium, 0); 
-  set_motor_speed(right, rev_medium, 0); 
-  
-  delay_x_seconds(240);
-  
-  set_motor_speed(left, rev_fast, 0); 
-  set_motor_speed(right, rev_fast, 0); 
-  
-  delay_x_seconds(240);
+    set_motor_speed(right, stop, 0);    
 }
 
-void spin_in_one_place_clockwise (void)
+void curve_right(void) //[2,1,0,0]
 {
-  motor_speed_variable[3,-3,0,0];
-  set_motor_speed(left, fast, 0); 
-  set_motor_speed(right, rev_fast, 0); 
+    motor_speed_variable[2,1,0,0];
+    set_motor_speed(left, medium, 0); 
+    set_motor_speed(right, slow, 0); 
 }
 
-void spin_in_one_place_counterclockwise (void)
+void curve_left(void) //[1,2,0,0]
 {
-  motor_speed_variable[-3,3,0,0];  
-  set_motor_speed(left, rev_fast, 0); 
-  set_motor_speed(right, fast, 0); 
+     motor_speed_variable[1,2,0,0]; 
+    set_motor_speed(left, slow, 0);
+    set_motor_speed(right, medium, 20);
 }
 
-void spin_circle_clockwise(void)
+char check_For_Lines(void)
 {
-    set_motor_speed(left, fast, 0);      //To spin clockwise left must be
-    set_motor_speed(right, medium, 0);   //Faster than right
-}
 
-void spin_circle_counterclockwise(void)
-{
-    set_motor_speed(left, medium, 0);
-    set_motor_speed(right, fast, 0);
-}
-
-void check_For_Lines(void)
-{
-    TMR0IF = 0;
-    WriteTimer0(15976960u); //16776960-15976960 = .1s ~ 3cm 
     //If it sees a line, that's fine; if it doesn't, spin 180 and come 
-    while(!TMR0IF)
-    {
         check_sensors();
         set_leds();
-        if(SeeLine.B)
+        if(SeeLine.B == 0b00100)
         {
-            follow_complex_curves();
+            return 1;
         }
-    }
-    
+    return 0;
+     
     //turn_around();
     //straight_fwd();
 }
 
+void slow_fwd(void)
+{
+  motor_speed_variable[1,1,0,60];
+    set_motor_speed(left, slow, 0); 
+    set_motor_speed(right, slow, 60);    
+}
+
+void spin_150_counterclockwise(void)
+{
+    spin_left();
+    delay_x_seconds(29); 
+    straight_fwd();  
+}
+
+
+
+void spin_150_clockwise(void)
+{
+    spin_right();
+    delay_x_seconds(30); 
+    straight_fwd();  
+}
+
+
 void turn_around(void)
 {
-    spin_in_one_place_clockwise();
-    delay_x_seconds(37);  //sample time, will need to test to optimize for our bot   
+    spin_right();
+    delay_x_seconds(40); 
     straight_fwd();
 }
 
@@ -412,7 +395,48 @@ void test_straight(void)
     delay_x_seconds(80);
 }
 
+void testFunction(void)
+{
+    straight_fwd();
+  
+  delay_x_seconds(240);
+  
+  slow_fwd();
+  
+  delay_x_seconds(240);
+  
+  curve_right(); 
+  
+  delay_x_seconds(240);
+  
+  curve_left();
+  
+  delay_x_seconds(240);
+  
+  straight_fwd();
+  
+  delay_x_seconds(240);
+  
+  turn_around();
+  
+}
 
+void test150(void)
+{
+    straight_fwd();
+  
+  delay_x_seconds(240);
+    
+  spin_150_clockwise();
+  
+    delay_x_seconds(240);
+    
+    spin_150_counterclockwise();
+    
+    
+  
+    
+}
 
 void delay_x_seconds(int time) //time = 80 for one second @ 32MHz
 {
