@@ -1,5 +1,7 @@
 /*
- * V1.3
+ * V1.4
+ 
+ Sharp turns cases timers.............
 
  * 
 */
@@ -38,6 +40,7 @@ void testFunction(void);
 void delay_x_seconds(int time); //time = 80 per second
 
 char line_seen;
+char break_Out_Of_Loop;
 
 signed int motor_speed_variable[] = {0,0,0,0}; //set 0 for stopped, 1 for slow, 2 for med, 3 for fast, -1 for rev slow, etc. this is left motor first, then right  
 //also, last two elements are for int modifier, to make this array more unique.
@@ -216,42 +219,101 @@ void follow_complex_curves(void)
     {
         //_delay(6000); //So the robot goes past the turn before actually turning
     TMR0IF = 0;
-    WriteTimer0(34286u); //(65536-34286)*256 = 1s
-    while(!TMR0IF)
-    {
-        motors_brake_all();
-    while(ReadTimer0() < 37411u)  //quarter second to check for lines
-    {line_seen = check_For_Lines();   } 
-        
-        if (line_seen)
-            straight_fwd();
-        else if (!line_seen)
-            spin_150_clockwise(); 
+    break_Out_Of_Loop = 0;
+    WriteTimer0(40000u); //(65536-34286)*256 = 1s
+    while(!TMR0IF && !break_Out_Of_Loop)
+    {    
+        while(ReadTimer0() < 50700u);  //quarter second to check for lines
+        check_sensors();
+        set_leds();
+            switch(SeeLine.B)
+            {
+                case 0b00000:
+                {
+                    spin_right();
+                    while(SeeLine.B == 0b00000)
+                    {
+                        check_sensors();
+                        set_leds();
+                    }
+                    break_Out_Of_Loop = 1;
+                    break;
+                }
+                case 0b10100:
+                case 0b00101:
+                case 0b00100:
+                {
+                    straight_fwd();
+                    break_Out_Of_Loop = 1;
+                    break;
+                }
+                case 0b11000:
+                {
+                    turn_left();
+                    break_Out_Of_Loop = 1;
+                    break;
+                }
+                case 0b00011:
+                {
+                    turn_right();
+                    break_Out_Of_Loop = 1;
+                    break;
+                }
+
+            }
     }
         break;  
     }
     case 0b10100u: //for reverse turns to the left
     {
         //_delay(6000); //So the robot goes past the turn before actually turning
-        
+        break_Out_Of_Loop = 0;
+        TMR0IF = 0;
+        WriteTimer0(40000u); //(65536-34286)*256 = .64s
+        while(!TMR0IF && !break_Out_Of_Loop)
+        {
+            while(ReadTimer0() < 50000u);  //quarter second to check for lines
+            check_sensors();
+            set_leds();
+            switch(SeeLine.B)
+            {
+                case 0b00000:
+                {
+                    spin_left();
+                    while(SeeLine.B == 0b00000)
+                    {
+                        check_sensors();
+                        set_leds();
+                    }
+                    break_Out_Of_Loop = 1;
+                    break;
+                }
+                case 0b10100:
+                case 0b00101:
+                case 0b00100:
+                {
+                    straight_fwd();
+                    break_Out_Of_Loop = 1;
+                    break;
+                }
+                
+                case 0b11000:
+                {
+                    turn_left();
+                    break_Out_Of_Loop = 1;
+                    break;
+                }
+                case 0b00011:
+                {
+                    turn_right();
+                    break_Out_Of_Loop = 1;
+                    break;
+                }
 
-            TMR0IF = 0;
-    WriteTimer0(34286u); //(65536-34286)*256 = 1s
-    while(!TMR0IF)
-    {
-        motors_brake_all();
-    while(ReadTimer0() < 37411u)  //quarter second to check for lines
-    {line_seen = check_For_Lines();   } 
-        
-        if (line_seen)
-            straight_fwd();
-        else if (!line_seen)
-            spin_150_counterclockwise(); 
-        
-          
-    }
-    break;
-    }
+            }
+        }
+     break;     
+   }
     case 0b11111u:
     {
     TMR0IF = 0;
@@ -282,9 +344,9 @@ void follow_complex_curves(void)
 
 void spin_left(void) //[-2,2,0,0]
 {
-    motor_speed_variable[-3,3,0,0];
-    set_motor_speed(left, rev_fast, 0); 
-    set_motor_speed(right, fast, 0); 
+    motor_speed_variable[-2,2,0,0];
+    set_motor_speed(left, rev_medium, 0); 
+    set_motor_speed(right, medium, 0); 
 }
 
 void turn_left(void) //[0,3,0,0]
@@ -316,9 +378,9 @@ void straight_backwards(void)
 
 void spin_right(void) //[2,-2,0,0]
 {
-    motor_speed_variable[3,-3,0,0];
-    set_motor_speed(left, fast, 0); 
-    set_motor_speed(right, rev_fast, 0);
+    motor_speed_variable[2,-2,0,0];
+    set_motor_speed(left, medium, 0); 
+    set_motor_speed(right, rev_medium, 0);
 }
 
 void turn_right(void) //[3,0,0,0]
@@ -348,7 +410,7 @@ char check_For_Lines(void)
     //If it sees a line, that's fine; if it doesn't, spin 180 and come 
         check_sensors();
         set_leds();
-        if(SeeLine.B == 0b00100)
+        if(SeeLine.b.Center)
         {
             return 1;
         }
@@ -365,27 +427,11 @@ void slow_fwd(void)
     set_motor_speed(right, slow, 60);    
 }
 
-void spin_150_counterclockwise(void)
-{
-    spin_left();
-    delay_x_seconds(29); 
-    straight_fwd();  
-}
-
-
-
-void spin_150_clockwise(void)
-{
-    spin_right();
-    delay_x_seconds(30); 
-    straight_fwd();  
-}
-
 
 void turn_around(void)
 {
     spin_right();
-    delay_x_seconds(40); 
+    delay_x_seconds(38); 
     straight_fwd();
 }
 
