@@ -1,5 +1,6 @@
 /*
- * Gold :D
+Final Version of Line Following Robot Code
+This was the Code used for running on the track
 
  * 
 */
@@ -80,7 +81,7 @@ void motor_control(void)
             
             
             TMR0IF = 0;
-            WriteTimer0(49911u); //(65536-49911)*256 = 4000000 TCY = .5s ~ 15cm
+            WriteTimer0(48911u); //(65536-49911)*256 = 4000000 TCY = .5s ~ 15cm
             straight_fwd();
             while(!TMR0IF && !SeeLine.B)
             {
@@ -124,7 +125,7 @@ void motor_control(void)
                     
                 else if (SeeLine.B == 0b11000)
                 {
-                spin_right();
+                spin_left();
                     while(!SeeLine.b.Center)
                     {
                     check_sensors();
@@ -155,6 +156,7 @@ void follow_complex_curves(void)
     
     case 0b00111u:
     {
+       _delay(3000); //So the robot goes past the turn before actually turning
         spin_right();
         while(!SeeLine.b.Center)
         {
@@ -195,6 +197,7 @@ void follow_complex_curves(void)
     {
       //if (SeeLine.B == 0b11100 ||SeeLine.B == 0b11000 ||SeeLine.B ==0b10000 )
       //{
+        
         turn_left(); //Just keep swimming 
         while(!SeeLine.b.Center)
         {
@@ -268,7 +271,7 @@ void follow_complex_curves(void)
    {
         TMR0IF=0;
         WriteTimer0(0u);
-        while( ReadTimer0() < 18286)
+        while( ReadTimer0() < 14286)
         {
             check_sensors();
             set_leds();
@@ -309,14 +312,14 @@ void follow_complex_curves(void)
     {
         TMR0IF=0;
         WriteTimer0(0u);
-        while( ReadTimer0() < 18286)
+        while( ReadTimer0() < 14286)
         {
             check_sensors();
             set_leds();
             
             if(SeeLine.B == 0b10100u)
             {
-               while(SeeLine.B == 0b10100)
+               while(SeeLine.B == 0b10100u)
                {
                    check_sensors();
                    set_leds();
@@ -349,7 +352,7 @@ void follow_complex_curves(void)
     case 0b11111u:
     {
     TMR0IF = 0;
-    WriteTimer0(55000u); //(65536-57724)*256 = .25s
+    WriteTimer0(57724u); //(65536-57724)*256 = .25s
 
     while(!TMR0IF) // To continue forward until timer runs out
         {
@@ -386,7 +389,7 @@ void turn_left(void) //[0,3,0,0]
 void straight_fwd(void) //[2,2,0,30]
 {
     motor_speed_variable[2,2,0,50];
-    set_motor_speed(left, slow, 20); //slow for both
+    set_motor_speed(left, slow, 0); //slow for both
     set_motor_speed(right, slow, 0); 
 }
 
@@ -473,7 +476,7 @@ void slow_fwd(void)
 void turn_around(void)
 {
     spin_right();
-    delay_x_seconds(38); 
+    delay_x_seconds(63); 
     straight_fwd();
 }
 
